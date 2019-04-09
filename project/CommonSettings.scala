@@ -2,8 +2,6 @@ import sbt.Keys._
 
 object CommonSettings {
 
-  val appMain        = "com.gigahex.launcher.cli.LauncherCLI"
-
   lazy val versions = new {
 
     val commonsCodec      = "1.9"

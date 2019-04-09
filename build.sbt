@@ -33,7 +33,7 @@ lazy val tool = (project in file("tool"))
   .settings(
     name := "teraflow-tool",
     moduleName := "teraflow-tool",
-    packMain := Map("launch" -> "com.terazyte.flow.cli.Teraflow"),
+    packMain := Map("teraflow" -> "com.terazyte.flow.cli.Teraflow"),
     libraryDependencies ++= Seq(
       "ch.qos.logback"         % "logback-classic"           % "1.2.3",
       "org.fusesource.jansi"   % "jansi"                     % "1.17.1",
