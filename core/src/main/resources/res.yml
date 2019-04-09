@@ -1,0 +1,7 @@
+resources:
+
+  - server: 
+      alias: hello-server
+      username: shad
+      password: S3cret
+      host: xx.xx.xx.xxx

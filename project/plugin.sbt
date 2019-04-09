@@ -1,0 +1,5 @@
+addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.2")
+addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.6")
+addSbtPlugin("org.xerial.sbt" % "sbt-pack" % "0.12")
+addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.11")
+addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.2.0")
