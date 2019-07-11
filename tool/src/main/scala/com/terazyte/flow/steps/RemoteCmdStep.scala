@@ -22,7 +22,7 @@ import com.terazyte.flow.task.{ExecRemoteCmd, ExecRemoteCopy}
 import net.jcazevedo.moultingyaml.{DefaultYamlProtocol, YamlValue}
 
 case class RemoteCmdStep(value: String, target: Option[String])
-    extends TaskDef(taskName = s"Exec ${value} @${target.getOrElse("local")}", tailLogs = true) {
+    extends TaskDef(taskName = s"Exec ${value} @${target.getOrElse("local")}", tailLogs = false) {
 
   override def buildTask(context: ActorContext): Task = {
     val actor = context.actorOf(RemoteCmdStep.props(this))

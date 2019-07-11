@@ -1,5 +1,7 @@
 package com.terazyte.flow.services
-import com.terazyte.flow.job.{JobState, TaskExecResult}
+import java.util.concurrent.ConcurrentHashMap
+
+import com.terazyte.flow.job._
 
 import scala.collection.mutable
 import scala.concurrent.Future
@@ -21,18 +23,25 @@ trait JobStateRepository {
 
 class InMemoryJobState extends JobStateRepository {
 
-  val jobStore = mutable.Map[String, JobState]()
+  val jobStore = new ConcurrentHashMap[String,JobState]()
 
   override def save(state: JobState): Future[String] = {
-    jobStore += (state.jobId -> state)
+    jobStore.put(state.jobId,state)
     Future.successful(state.jobId)
   }
 
-  override def getJobStatus(id: String): Future[Option[JobState]] = Future.successful(jobStore.get(id))
+  private def getFromJobHashMap(id: String) = if(jobStore.containsKey(id)) Some(jobStore.get(id)) else None
 
-  override def updateJobStatus(id: String, result: Seq[TaskExecResult]): Future[Boolean] = jobStore.get(id) match {
+  override def getJobStatus(id: String): Future[Option[JobState]] = Future.successful {
+    val status = getFromJobHashMap(id)
+    status
+  }
+
+  override def updateJobStatus(id: String, result: Seq[TaskExecResult]): Future[Boolean] = getFromJobHashMap(id) match {
     case Some(state) =>
-      jobStore += (state.jobId -> state.copy(tasks = result))
+      val isRunning = result.find(_.status.equals(Running)).nonEmpty
+      val currentStatus = if(isRunning) Running else Completed
+      jobStore.put(state.jobId ,state.copy(tasks = result, currentStatus = currentStatus))
       Future.successful(true)
     case None => Future.successful(false)
   }

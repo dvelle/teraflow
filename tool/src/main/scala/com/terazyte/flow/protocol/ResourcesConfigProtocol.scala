@@ -23,7 +23,7 @@ import com.terazyte.flow.emr.EMRTargetYamlParser
 import com.terazyte.flow.s3.{S3Target, S3TargetParser}
 import net.jcazevedo.moultingyaml.{DefaultYamlProtocol, YamlArray, YamlFormat, YamlString, YamlValue, deserializationError}
 
-trait SecretConfigProtocol extends DefaultYamlProtocol {
+trait ResourceConfigProtocol extends DefaultYamlProtocol {
 
   implicit object SecretConfigFormat extends YamlFormat[Seq[ResourceConfig]] {
 

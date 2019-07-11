@@ -23,13 +23,18 @@ import java.util.UUID
 
 import akka.actor.ActorSystem
 import com.terazyte.flow.config.ResourceConfig
-import com.terazyte.flow.job.JobController
+import com.terazyte.flow.job.{Completed, JobController, JobState, Stopped}
 import com.terazyte.flow.job.JobController.StartJob
 import com.terazyte.flow.parser.ConfigParser
-import com.terazyte.flow.protocol.SecretConfigProtocol
+import com.terazyte.flow.protocol.ResourceConfigProtocol
+import com.terazyte.flow.services.{InMemoryJobState, LocalJobExecutor}
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import net.jcazevedo.moultingyaml._
+
+import scala.collection.immutable.Queue
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration._
 import scala.io.Source
 import scala.util.{Failure, Success, Try}
 
@@ -45,7 +50,7 @@ object Teraflow extends App {
       if (config.version) {
         showVersion()
       }
-      val system   = ActorSystem("Teraflow")
+      val system       = ActorSystem("Teraflow")
       val flowExecutor = new Teraflow(system, config)
       val configPath = if (args.length == 1) {
         val fileName = args(0) + config.configPath.substring(config.configPath.lastIndexOf('/') + 1)
@@ -75,7 +80,7 @@ object Teraflow extends App {
 
 }
 
-class Teraflow(system: ActorSystem, cliConfig: CLIConfig) extends SecretConfigProtocol {
+class Teraflow(system: ActorSystem, cliConfig: CLIConfig) extends ResourceConfigProtocol {
 
   def launch(path: String): Unit = {
     val configFile = new File(path)
@@ -114,7 +119,27 @@ class Teraflow(system: ActorSystem, cliConfig: CLIConfig) extends SecretConfigPr
 
         optResources match {
           case Some(resources) =>
-            val controller = system.actorOf(JobController.props(config, resources), "teraflow-controller")
+            val controller  = system.actorOf(JobController.props(config, resources), "teraflow-controller")
+            val jobExecutor = new LocalJobExecutor(new InMemoryJobState, system)
+            val jobId       = Await.result(jobExecutor.submit(config.project, resources, Queue(config.tasks: _*)), 2.seconds)
+
+            var jobCompleted = false
+            while (!jobCompleted) {
+              val hasJobCompleted = jobExecutor.getJobStatus(jobId).map {
+                case Some(JobState(_, _, currentStatus, _, _)) =>
+                  currentStatus match {
+                    case Completed => true
+                    case Stopped   => true
+                    case _         => false
+                  }
+              }
+
+              jobCompleted = Await.result(hasJobCompleted, 2.seconds)
+              if(!jobCompleted){
+                Thread.sleep(1000)
+              }
+            }
+
             controller ! StartJob()
           case None =>
             system.terminate().onComplete(_ => sys.exit(1))

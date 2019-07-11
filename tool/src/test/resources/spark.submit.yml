@@ -12,6 +12,8 @@ tasks:
           to: /apps/spark/
           target: spark-docker
 
+      - cmd: 
+          value: sleep 3
 
       - cmd:
           value: rm -rf /user/spark/out

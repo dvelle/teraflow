@@ -26,9 +26,9 @@ class MasterWorkerSpec
     val idGenerator = new IdGenerator {
       override def generate(prefix: String): String = s"100"
     }
-    val master   = system.actorOf(Master.props(new InMemoryJobState, Seq()))
+    val master   = system.actorOf(Master.props(new InMemoryJobState))
     val execStep = CmdDef("ls -lrt .", System.getProperty("user.home"))
-    master ! SubmitJob("local-job", Queue(execStep), idGenerator)
+    master ! SubmitJob("local-job",Seq(), Queue(execStep), idGenerator)
     expectMsg("100")
     Thread.sleep(1000)
 

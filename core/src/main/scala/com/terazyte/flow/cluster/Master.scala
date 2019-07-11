@@ -14,10 +14,10 @@ import scala.collection.immutable.Queue
   * A stateless master, that manages the workers for running the job
   * @param jobStateRepository
   */
-class Master(jobStateRepository: JobStateRepository, resources: Seq[ResourceConfig]) extends BaseActor {
+class Master(jobStateRepository: JobStateRepository) extends BaseActor {
 
   def running(workers: Seq[String]): Receive = {
-    case SubmitJob(name, steps, idGenerator) =>
+    case SubmitJob(name, resources, steps, idGenerator) =>
       //generate a job Id and associate it with a worker
       val workerId = idGenerator.generate()
       val worker =
@@ -29,7 +29,7 @@ class Master(jobStateRepository: JobStateRepository, resources: Seq[ResourceConf
 
     case GetJobStatus(id) =>
       //Query the worker for the job status
-      jobStateRepository.getJobStatus(id)
+     jobStateRepository.getJobStatus(id) pipeTo sender()
 
     case CancelJob(id) =>
       //Cancel the pending tasks
@@ -51,11 +51,11 @@ class Master(jobStateRepository: JobStateRepository, resources: Seq[ResourceConf
 
 object Master {
 
-  def props(jobStateRepository: JobStateRepository, resources: Seq[ResourceConfig]): Props =
-    Props(new Master(jobStateRepository, resources))
+  def props(jobStateRepository: JobStateRepository): Props =
+    Props(new Master(jobStateRepository))
   sealed trait MasterMessage
 
-  case class SubmitJob(name: String, steps: Queue[TaskDef], idGenerator: IdGenerator) extends MasterMessage
+  case class SubmitJob(name: String,resources: Seq[ResourceConfig], steps: Queue[TaskDef], idGenerator: IdGenerator) extends MasterMessage
   case class JobCompleted(id: String, report: Seq[TaskExecResult])                    extends MasterMessage
   case class GetJobStatus(id: String)                                                 extends MasterMessage
   case class CancelJob(id: String)                                                    extends MasterMessage

@@ -7,7 +7,7 @@ import akka.testkit.{ImplicitSender, TestActors, TestKit}
 import com.terazyte.flow.config.ResourceConfig
 import com.terazyte.flow.job.JobController
 import com.terazyte.flow.job.JobController.StartJob
-import com.terazyte.flow.protocol.SecretConfigProtocol
+import com.terazyte.flow.protocol.ResourceConfigProtocol
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers, WordSpecLike}
 import net.jcazevedo.moultingyaml._
 
@@ -20,7 +20,7 @@ class SparkSubmitSpec
     with WordSpecLike
     with Matchers
     with BeforeAndAfterAll
-    with SecretConfigProtocol {
+    with ResourceConfigProtocol {
 
   val resourceConfig = Source
     .fromFile(getClass.getResource("/resources.yml").getFile)

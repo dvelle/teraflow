@@ -22,7 +22,7 @@ class Worker(name: String,
       tasks.dequeue match {
         case (step, queue) =>
           val task = step.buildTask(context)
-          log.info(s"Running the task : ${task.taskDef.taskName}")
+          //log.info(s"Running the task : ${task.taskDef.taskName}")
           task.actor ! ExecCommand(session, self)
           context.become(runTasks(queue, session))
       }
@@ -33,13 +33,14 @@ class Worker(name: String,
     case InitJob =>
       // Do something
       execTasks(pendingTasks, session) { updatedSession =>
-        context.parent ! JobCompleted(self.path.toStringWithoutAddress, updatedSession.execHistory)
+
+        context.parent ! JobCompleted(self.path.name, updatedSession.execHistory)
       }
 
     case TaskCompleted(result) =>
       val updatedSession = session.copy(execHistory = session.execHistory :+ result)
       execTasks(pendingTasks, updatedSession) { sess =>
-        context.parent ! JobCompleted(self.path.toStringWithoutAddress, sess.execHistory)
+        context.parent ! JobCompleted(self.path.name, sess.execHistory)
       }
 
     case GetWorkStatus => sender() ! session.execHistory

@@ -22,7 +22,7 @@ import net.jcazevedo.moultingyaml._
 
 import scala.io.Source
 
-trait SessionProtocol extends SecretConfigProtocol {
+trait SessionProtocol extends ResourceConfigProtocol {
 
   def parse(project: String, configFile: String): Session = {
     val yamlAst = Source.fromFile(configFile).getLines().mkString("\n").parseYaml
