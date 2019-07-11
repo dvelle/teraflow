@@ -46,7 +46,7 @@ case class EMRTarget(alias: String,
 
   def exec(script: BashScript): Either[Throwable, String] = {
     lazy val emr  = emrClient()
-    val scriptDir = "/home/hadoop/.launcher/scripts"
+    val scriptDir = "/home/hadoop/.teraflow/scripts"
     val remoteScriptPath = (script.value, script.path) match {
       case (Some(scriptVal), None) =>
         getClusterMasterIp(emr).map { ip =>

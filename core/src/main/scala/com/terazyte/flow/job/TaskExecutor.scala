@@ -18,10 +18,9 @@ package com.terazyte.flow.job
 
 import java.util.UUID
 
-import akka.actor.ActorRef
+import akka.actor.{ActorContext, ActorRef}
+import com.terazyte.flow.cluster.Worker.TaskCompleted
 import com.terazyte.flow.config.ResourceConfig
-import com.terazyte.flow.job.StageExecutor.TaskCompleted
-import com.terazyte.flow.steps.ExecutableStep
 import com.terazyte.flow.task.actor.BaseActor
 
 trait TaskExecutor[T <: TaskDef] extends BaseActor {
@@ -35,7 +34,7 @@ trait TaskExecutor[T <: TaskDef] extends BaseActor {
     case ExecCommand(session, manager) =>
       val execResult = execute(session) match {
         case Left(ex) =>
-          TaskExecResult("01", taskDef, Failed, taskDef.onFailureMessage(ex))
+          TaskExecResult(taskDef, Failed, taskDef.onFailureMessage(ex))
         case Right(result) =>
           result
       }
@@ -47,36 +46,30 @@ trait TaskExecutor[T <: TaskDef] extends BaseActor {
 }
 case class ExecCommand(session: Session, manager: ActorRef)
 
-abstract class TaskDef(val name: String, val tailLogs: Boolean = false) extends ExecutableStep {
+abstract class TaskDef(val taskName: String, val tailLogs: Boolean = false) {
 
-  def onSuccessMessage(): String = s"${name} completed"
+  def buildTask(context: ActorContext): Task
 
-  def onSkipMessage(): String = s"${name} skipped"
+  def onSuccessMessage(): String = s"${taskName} completed"
+
+  def onSkipMessage(): String = s"${taskName} skipped"
 
   def onFailureMessage(throwable: Throwable): String =
     s"Failure cause: ${throwable.getMessage()}"
 
 }
 
-case class Task(stage: Stage, taskDef: TaskDef, actor: ActorRef)
+case class Task(taskDef: TaskDef, actor: ActorRef)
 
-sealed trait TaskStatus
-case object Starting   extends TaskStatus
-case object Running    extends TaskStatus
-case object Stopping   extends TaskStatus
-case object Stopped    extends TaskStatus
-case object Failed     extends TaskStatus
-case object Skipped    extends TaskStatus
-case object Completed  extends TaskStatus
-case object Restarting extends TaskStatus
-
-case class TaskExecResult(execId: String, taskDef: TaskDef, status: TaskStatus, message: String, detail: String = "")
+case class TaskExecResult(taskDef: TaskDef, status: RunStatus, message: String, detail: String = "")
 object TaskExecResult {
 
-  def success(taskDef: TaskDef, id: String, detail: String = ""): TaskExecResult =
-    TaskExecResult(id, taskDef, Completed, s"${taskDef.name} Completed", detail)
+  def success(taskDef: TaskDef, detail: String = ""): TaskExecResult =
+    TaskExecResult(taskDef, Completed, s"${taskDef.taskName} Completed", detail)
 
-  def failed(taskDef: TaskDef, id: String, cause: String) = TaskExecResult(id, taskDef, Failed, cause)
+  def starting(taskDef: TaskDef): TaskExecResult = TaskExecResult(taskDef, NotStarted, "Task has not yet started")
+
+  def failed(taskDef: TaskDef, id: String, cause: String) = TaskExecResult(taskDef, Failed, cause)
 
 }
 

@@ -15,20 +15,21 @@
  */
 
 package com.terazyte.flow.cli
+
 import java.io.File
 
-case class CLIConfig(configPath: String = new File(".").getCanonicalPath() + s"${OSHelper.slash}.launch.yml",
+case class CLIConfig(configPath: String = new File(".").getCanonicalPath() + s"${OSHelper.slash}.flow.yml",
                      stages: Array[String] = Array(),
                      version: Boolean = false,
                      verbose: Boolean = false)
 
 object CLIConfig {
-  val program = "launch"
+  val program = "teraflow"
   val cliParser = new scopt.OptionParser[CLIConfig](program) {
     head(program, "0.1.0")
 
     opt[String]('c', "config")
-      .valueName("<launch-config>")
+      .valueName("<flow-config>")
       .text("Path of the configuration file")
       .action((path, cliConfig) => cliConfig.copy(configPath = path))
 

@@ -15,7 +15,6 @@
  */
 
 package com.terazyte.flow.config
+import com.terazyte.flow.job.TaskDef
 
-import com.terazyte.flow.steps.ExecutableStep
-
-case class JobConfig(project: String, resources: Option[String], stages: Map[String, Seq[ExecutableStep]])
+case class JobConfig(project: String, resources: Option[String], tasks:  Seq[TaskDef])

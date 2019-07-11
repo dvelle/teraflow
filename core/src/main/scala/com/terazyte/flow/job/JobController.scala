@@ -18,33 +18,47 @@ package com.terazyte.flow.job
 
 import akka.actor.CoordinatedShutdown.JvmExitReason
 import akka.actor.{ActorContext, ActorRef, CoordinatedShutdown, Props}
+import com.terazyte.flow.cluster.Worker.TaskCompleted
 import com.terazyte.flow.config.{JobConfig, ResourceConfig}
 import com.terazyte.flow.job.JobController._
-import com.terazyte.flow.job.StageExecutor.StartStage
-import com.terazyte.flow.steps.ExecutableStep
 import com.terazyte.flow.task.actor.BaseActor
+import com.terazyte.flow.task.common.ProgressActor.{ShowFailure, ShowProgress, ShowSkipped, ShowSuccess}
 import com.terazyte.flow.task.common._
 
 import scala.collection.immutable.Queue
 
-class JobController(project: String, resources: Seq[ResourceConfig], stages: Queue[JobStage]) extends BaseActor {
+class JobController(project: String, resources: Seq[ResourceConfig], tasks: Queue[TaskDef]) extends BaseActor {
 
   val progressActor = context.actorOf(ProgressActor.props(), "task-progress")
 
-  def executionContext(jobContext: JobContext, jobTasks: Queue[JobStage]): Receive = {
+  def executionContext(jobContext: JobContext, jobTasks: Queue[TaskDef]): Receive = {
 
-    case StartJob =>
+    case StartJob(historyResults) =>
       if (jobTasks.nonEmpty) {
         jobTasks.dequeue match {
-          case ((stage, taskDefs), queue) =>
-            val tasks         = taskDefs.map(_.buildTask(context, stage))
-            val stageExecutor = context.actorOf(StageExecutor.props(stage, tasks, jobContext), stage.name)
-            stageExecutor ! StartStage()
-            context.become(executionContext(jobContext, queue))
+          case (executableStep, queue) =>
+            val task = executableStep.buildTask(context)
+            progressActor ! ShowProgress(task.taskDef.taskName, task.taskDef.tailLogs)
+            task.actor ! ExecCommand(jobContext.session, self)
+            context.become(
+              executionContext(
+                jobContext.copy(
+                  session = jobContext.session.copy(execHistory = jobContext.session.execHistory ++ historyResults)),
+                queue))
         }
       } else {
         self ! ExitJob(0)
       }
+
+    case TaskCompleted(result) =>
+      result.status match {
+        case Completed => progressActor ! ShowSuccess(result.message, result.detail)
+        case Failed =>
+          progressActor ! ShowFailure(result.taskDef.taskName, result.message)
+        case Skipped => progressActor ! ShowSkipped(result.message)
+        case _       => progressActor ! ShowSuccess(result.message)
+      }
+      self ! StartJob(Seq(result))
 
     case StageCompleted(jobContext, exitCode) =>
       if (exitCode != 0) {
@@ -62,7 +76,7 @@ class JobController(project: String, resources: Seq[ResourceConfig], stages: Que
   }
 
   override def receive: Receive = {
-    executionContext(jobContext = JobContext(self, Session(project, resources)), stages)
+    executionContext(JobContext(self, Session(project, resources)), tasks)
   }
 
 }
@@ -70,17 +84,14 @@ class JobController(project: String, resources: Seq[ResourceConfig], stages: Que
 object JobController {
 
   type JobTask  = (Stage, Queue[Task])
-  type JobStage = (Stage, Queue[ExecutableStep])
+  type JobStage = (Stage, Queue[TaskDef])
   def props(config: JobConfig, resources: Seq[ResourceConfig]): Props = {
-    val stages = config.stages.map {
-      case (k, v) => (NamedStage(k), Queue(v: _*))
-    }.toSeq
 
-    Props(new JobController(config.project, resources, Queue(stages: _*)))
+    Props(new JobController(config.project, resources, Queue(config.tasks: _*)))
   }
 
   case class StageCompleted(jobContext: JobContext, exitCode: Int)
   case class ExitJob(exitCode: Int)
-  case object StartJob
+  case class StartJob(history: Seq[TaskExecResult] = Seq())
 
 }

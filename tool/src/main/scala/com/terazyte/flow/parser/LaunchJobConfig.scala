@@ -17,6 +17,7 @@
 package com.terazyte.flow.parser
 
 import com.terazyte.flow.config.{ExecTarget, JobConfig}
+import com.terazyte.flow.job.TaskDef
 import com.terazyte.flow.steps._
 import net.jcazevedo.moultingyaml._
 
@@ -28,7 +29,7 @@ case class RemoteCmd(value: String, target: ExecTarget)
 case class CopyCmd(from: String, to: String) extends InstallTask
 case class HqlCmd(hql: String)               extends InstallTask
 
-case class InstallSteps(steps: Seq[ExecutableStep])
+case class InstallSteps(steps: Seq[TaskDef])
 
 trait CommandFormats extends DefaultYamlProtocol {
 
@@ -42,36 +43,28 @@ case class BuildConfig(source: String, workDir: String, cmd: String)
 
 trait JobConfigProtocol extends DefaultYamlProtocol {
 
-  implicit object StageConfigFormat extends YamlFormat[Map[String, Seq[ExecutableStep]]] {
+  implicit object StageConfigFormat extends YamlFormat[Seq[TaskDef]] {
 
-    override def write(obj: Map[String, Seq[ExecutableStep]]): YamlValue = ???
+    override def write(obj: Seq[TaskDef]): YamlValue = ???
 
-    override def read(yaml: YamlValue): Map[String, Seq[ExecutableStep]] = {
-      val steps = yaml match {
+    override def read(yaml: YamlValue): Seq[TaskDef] = {
+      val tasks = yaml match {
         case YamlArray(xs) =>
-          xs.flatMap { x =>
-            x match {
-              case YamlObject(stg) =>
-                stg.map {
-                  case (YamlString(stgName), YamlArray(tsks)) =>
-                    val taskDefns = tsks.flatMap { obj =>
-                      obj.asYamlObject.fields.map {
-                        case (YamlString(CopyStep.id), v)           => CopyStep.parseStep(v)
-                        case (YamlString(RemoteCmdStep.id), v)      => RemoteCmdStep.parseStep(v)
-                        case (YamlString(CreateResourceStep.id), v) => CreateResourceStep.parseStep(v)
-                        case (YamlString(ScriptStep.id), v)         => ScriptStep.parseStep(v)
-
-                      }
-
-                    }
-                    (stgName -> taskDefns)
-
-                }
+          val taskDefns = xs.flatMap { obj =>
+            obj.asYamlObject.fields.map {
+              case (YamlString(CopyStep.id), v)           => CopyStep.parseStep(v)
+              case (YamlString(RemoteCmdStep.id), v)      => RemoteCmdStep.parseStep(v)
+              case (YamlString(CreateResourceStep.id), v) => CreateResourceStep.parseStep(v)
+              case (YamlString(ScriptStep.id), v)         => ScriptStep.parseStep(v)
+              case (YamlString(SparkSubmitStep.id), v)    => SparkSubmitStep.parseStep(v)
             }
 
           }
+          taskDefns
+
       }
-      steps.toMap
+
+      tasks
 
     }
 
@@ -80,34 +73,3 @@ trait JobConfigProtocol extends DefaultYamlProtocol {
   implicit val jc = yamlFormat3(JobConfig)
 
 }
-
-//trait LauchConfigProtocol extends DefaultYamlProtocol {
-//
-//  implicit val buildConfig = yamlFormat3(BuildConfig)
-//
-//  implicit object InstallerYamlFormat extends YamlFormat[InstallSteps] with CommandFormats {
-//
-//    override def write(obj: InstallSteps): YamlValue = ???
-//
-//    def read(value: YamlValue) = {
-//      value match {
-//        case YamlArray(xs) =>
-//          val res = xs.flatMap { obj =>
-//            obj.asYamlObject.fields.map {
-//              case (YamlString(CopyStep.id), v)      => CopyStep.parseStep(v)
-//              case (YamlString(RemoteCmdStep.id), v) => RemoteCmdStep.parseStep(v)
-//
-//            }
-//
-//          }
-//
-//          InstallSteps(res)
-//        case x =>
-//          println(x)
-//          deserializationError("Installation steps expected")
-//      }
-//    }
-//  }
-//
-//  implicit val launchConfig = yamlFormat4(LaunchJobConfig)
-//}

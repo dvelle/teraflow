@@ -29,11 +29,11 @@ import net.jcazevedo.moultingyaml.{DefaultYamlProtocol, YamlValue}
 import scala.collection.mutable.ArrayBuffer
 import scala.util.{Failure, Success, Try}
 
-case class CmdDef(cmd: String, workDir: String) extends TaskDef(name = s"Execute ${cmd}", tailLogs = true) {
+case class CmdDef(cmd: String, workDir: String) extends TaskDef(taskName = s"Execute ${cmd}", tailLogs = true) {
 
-  override def buildTask(context: ActorContext, stage: Stage): Task = {
+  override def buildTask(context: ActorContext): Task = {
     val actor = context.actorOf(CmdDef.props(this), "exec-cmd")
-    Task(stage, this, actor)
+    Task(this, actor)
   }
 
 }
@@ -82,7 +82,7 @@ case class ExecCmd(taskDef: CmdDef) extends TaskExecutor[CmdDef] {
       case Success(x) if x != 0 =>
         Left(new RuntimeException(logs.mkString("\n")))
       case _ =>
-        Right(TaskExecResult(id(), taskDef, Completed, taskDef.onSuccessMessage()))
+        Right(TaskExecResult( taskDef, Completed, taskDef.onSuccessMessage()))
     }
 
   }

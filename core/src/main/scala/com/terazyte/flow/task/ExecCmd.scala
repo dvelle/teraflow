@@ -17,15 +17,35 @@
 package com.terazyte.flow.task
 
 import java.io.File
-import java.util.UUID
 
-import com.terazyte.flow.job.{Completed, Session, TaskExecResult}
+import scala.sys.process._
+import scala.sys.process.ProcessLogger
+import akka.actor.{ActorContext, Props}
+import com.terazyte.flow.job._
+import com.terazyte.flow.steps.Step
+import com.terazyte.flow.task.common._
+import net.jcazevedo.moultingyaml.{DefaultYamlProtocol, YamlValue}
 
 import scala.collection.mutable.ArrayBuffer
-import scala.sys.process.{Process, ProcessLogger}
 import scala.util.{Failure, Success, Try}
 
-class ExecLocalCmd(taskDef: CmdDef) {
+case class CmdDef(cmd: String, workDir: String) extends TaskDef(taskName = s"Execute ${cmd}", tailLogs = true) {
+
+  override def buildTask(context: ActorContext): Task = {
+    val actor = context.actorOf(CmdDef.props(this), "exec-cmd")
+    Task(this, actor)
+  }
+
+}
+
+object CmdDef extends Step[CmdDef] with DefaultYamlProtocol {
+  override val id: String                          = "cmd"
+  override def props(step: CmdDef): Props          = Props(new ExecCmd(step))
+  override def parseStep(value: YamlValue): CmdDef = ???
+}
+
+case class ExecCmd(taskDef: CmdDef) extends TaskExecutor[CmdDef] {
+
   val logs: ArrayBuffer[String] = ArrayBuffer.empty
 
   object CmdLogProcessor extends ProcessLogger {
@@ -34,31 +54,26 @@ class ExecLocalCmd(taskDef: CmdDef) {
 
     override def err(s: => String): Unit = {
       logs.append(s)
-      println(s)
     }
 
     override def out(s: => String): Unit = {
       logs.append(s)
-      println(s)
     }
 
   }
 
-  def execute(session: Session): Either[Throwable, TaskExecResult] = {
+  override def execute(session: Session): Either[Throwable, TaskExecResult] = {
 
     val exitCode = Try {
 
-      val cmds = taskDef.cmd.split("#")
-      Process(cmds.head)
-      val firstCmd = Process(cmds.head, new File(taskDef.workDir))
+      val cmds     = taskDef.cmd.split("#")
+      val firstCmd = Process(taskDef.cmd, new File(taskDef.workDir))
       val pipedCmd = cmds.tail.foldLeft(firstCmd) { (cmdBuilder, c) =>
-        if (c.startsWith(">")) cmdBuilder.#>(new File(c.substring(2).trim))
-        else
-          cmdBuilder.#|(c)
+        cmdBuilder.#|(c)
       }
-      val p = pipedCmd.run(true)
-      println(s"Started the cmd: ${taskDef.cmd}")
-      p.exitValue()
+
+      pipedCmd
+        .!(ProcessLogger(line => logs.append(line)))
     }
 
     exitCode match {
@@ -67,8 +82,9 @@ class ExecLocalCmd(taskDef: CmdDef) {
       case Success(x) if x != 0 =>
         Left(new RuntimeException(logs.mkString("\n")))
       case _ =>
-        Right(TaskExecResult(taskDef, Completed, taskDef.onSuccessMessage()))
+        Right(TaskExecResult(taskDef, Completed, taskDef.onSuccessMessage(), logs.mkString("\n")))
     }
 
   }
+
 }

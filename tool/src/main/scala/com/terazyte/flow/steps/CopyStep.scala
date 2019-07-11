@@ -15,24 +15,24 @@
  */
 
 package com.terazyte.flow.steps
+
 import akka.actor.{ActorContext, Props}
 import com.terazyte.flow.job.{Stage, Task, TaskDef}
 import com.terazyte.flow.task.ExecRemoteCopy
 import net.jcazevedo.moultingyaml.{DefaultYamlProtocol, YamlValue}
 
-case class CopyStep(from: String, to: String, target: Option[String] = None)
-    extends TaskDef(name = s"Copy from ${from}, to ${to} located at ${target.getOrElse("local")}")
-    with ExecutableStep {
+case class CopyStep(from: String, to: String, name : Option[String], target: Option[String] = None)
+    extends TaskDef(taskName = name.getOrElse(s"Copy from ${from}, to ${to} located at ${target.getOrElse("local")}")) {
 
-  override def buildTask(context: ActorContext, stage: Stage): Task = {
+  override def buildTask(context: ActorContext): Task = {
     val actor = context.actorOf(CopyStep.props(this))
-    Task(stage, this, actor)
+    Task(this, actor)
   }
 }
 
 object CopyStep extends Step[CopyStep] with DefaultYamlProtocol {
 
-  implicit val copyStep = yamlFormat3(CopyStep.apply)
+  implicit val copyStep = yamlFormat4(CopyStep.apply)
 
   override val id: String = "cp"
 

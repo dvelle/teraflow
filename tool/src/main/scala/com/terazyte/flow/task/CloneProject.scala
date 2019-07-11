@@ -30,13 +30,13 @@ import scala.util.Try
 
 case class SourceProject(project: String, workDir: String, uri: Option[String] = None)
     extends TaskDef(
-      name = s"Clone ${project}"
+      taskName = s"Clone ${project}"
     ) {
 
   override def onSkipMessage(): String =
-    s"Skipped cloning of the project, ${name}"
+    s"Skipped cloning of the project, ${taskName}"
 
-  override def buildTask(context: ActorContext, stage: Stage): Task = ???
+  override def buildTask(context: ActorContext): Task = ???
 }
 
 object SourceProject extends Step[SourceProject] with DefaultYamlProtocol {
@@ -52,7 +52,7 @@ case class CloneProject(taskDef: SourceProject) extends TaskExecutor[SourceProje
     taskDef.uri match {
       case Some(u) => clone(u)
       case None =>
-        Right(TaskExecResult(UUID.randomUUID().toString, taskDef, Skipped, taskDef.onSkipMessage()))
+        Right(TaskExecResult( taskDef, Skipped, taskDef.onSkipMessage()))
     }
 
   }
@@ -67,7 +67,7 @@ case class CloneProject(taskDef: SourceProject) extends TaskExecutor[SourceProje
         .call()
     }
     opsResult.toEither.map(_ =>
-      TaskExecResult(UUID.randomUUID().toString, taskDef, Completed, taskDef.onSuccessMessage()))
+      TaskExecResult(taskDef, Completed, taskDef.onSuccessMessage()))
   }
 
 }

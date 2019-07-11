@@ -17,8 +17,9 @@
 package com.terazyte.flow.job
 
 import akka.actor.Props
+import com.terazyte.flow.cluster.Worker.TaskCompleted
 import com.terazyte.flow.job.JobController.StageCompleted
-import com.terazyte.flow.job.StageExecutor.{ExitStage, StartStage, TaskCompleted}
+import com.terazyte.flow.job.StageExecutor.{ExitStage, StartStage}
 import com.terazyte.flow.task.actor.BaseActor
 import com.terazyte.flow.task.common.ProgressActor.{ShowFailure, ShowProgress, ShowSkipped, ShowSuccess}
 import com.terazyte.flow.task.common._
@@ -50,7 +51,7 @@ class StageExecutor(stage: Stage, tasks: Queue[Task], jobContext: JobContext) ex
         tasks.dequeue match {
           case (task, queue) =>
 
-            progressActor ! ShowProgress(task.taskDef.name,task.taskDef.tailLogs)
+            progressActor ! ShowProgress(task.taskDef.taskName,task.taskDef.tailLogs)
             task.actor ! ExecCommand(jobContext.session, self)
             context.become(
               executeTasks(jobContext.copy(session = jobContext.session.copy(execHistory = execResults ++ execResults)),
@@ -64,7 +65,7 @@ class StageExecutor(stage: Stage, tasks: Queue[Task], jobContext: JobContext) ex
       result.status match {
         case Completed => progressActor ! ShowSuccess(result.message, result.detail)
         case Failed =>
-          progressActor ! ShowFailure(result.taskDef.name, result.message)
+          progressActor ! ShowFailure(result.taskDef.taskName, result.message)
         case Skipped => progressActor ! ShowSkipped(result.message)
         case _       => progressActor ! ShowSuccess(result.message)
       }
@@ -89,7 +90,6 @@ object StageExecutor {
 
   def props(stage: Stage, tasks: Queue[Task], jobContext: JobContext): Props =
     Props(new StageExecutor(stage, tasks, jobContext))
-  case class TaskCompleted(result: TaskExecResult)
   case class ExitStage(exitCode: Int)
   case class StartStage(execResults: Seq[TaskExecResult] = Seq())
 

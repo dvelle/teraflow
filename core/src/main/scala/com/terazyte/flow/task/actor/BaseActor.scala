@@ -17,15 +17,16 @@
 package com.terazyte.flow.task.actor
 
 import akka.actor.{Actor, ActorLogging, Terminated}
+import akka.util.Timeout
 
 import scala.concurrent.duration.Duration
-
+import scala.concurrent.duration._
 abstract class BaseActor extends Actor with ActorLogging {
 
   implicit def system     = context.system
   def scheduler           = system.scheduler
   implicit def dispatcher = system.dispatcher
-
+  implicit val timeout = Timeout(1.seconds)
   def stopChildren(): Unit = {
     context.children foreach { child =>
       context.unwatch(child)

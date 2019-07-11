@@ -1,0 +1,8 @@
+resources:
+  - docker:
+      alias: spark-docker
+      container: spark-1
+
+  - docker:
+      alias: hadoop-docker
+      container: hadoop-test

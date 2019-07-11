@@ -44,7 +44,7 @@ case class RemoteHost(alias: String, host: String, username: String, password: O
         val ssh     = getSSHClient()
         val session = ssh.startSession()
 
-        val remoteScriptDir = s"/home/${username}/.launcher/scripts"
+        val remoteScriptDir = s"/home/${username}/.teraflow/scripts"
 
         val run = session.exec(s"mkdir -p ${remoteScriptDir}")
 

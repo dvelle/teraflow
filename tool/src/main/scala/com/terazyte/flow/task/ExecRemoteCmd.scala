@@ -39,10 +39,10 @@ case class ExecRemoteCmd(taskDef: RemoteCmdStep) extends TaskExecutor[RemoteCmdS
 
     val secret = taskDef.target.flatMap(t => session.resources.find(_.alias.equalsIgnoreCase(t)))
     val result = secret map {
-      case x: RemoteHost => x.execCmd(taskDef.value).map(_ => TaskExecResult.success(taskDef, id()))
+      case x: RemoteHost => x.execCmd(taskDef.value).map(_ => TaskExecResult.success(taskDef))
       case x: DockerContainer =>
         implicit val mat = ActorMaterializer()
-        x.execCmd(taskDef.value).map(s => TaskExecResult.success(taskDef,id(),s))
+        x.execCmd(taskDef.value)(print).map(s => TaskExecResult.success(taskDef,s))
     }
 
     result.getOrElse({

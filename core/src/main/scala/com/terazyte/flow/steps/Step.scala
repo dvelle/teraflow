@@ -20,7 +20,7 @@ import akka.actor.{ActorContext, Props}
 import com.terazyte.flow.job.{Stage, Task, TaskDef}
 import net.jcazevedo.moultingyaml.YamlValue
 
-trait Step[T <: ExecutableStep] {
+trait Step[T <: TaskDef] {
 
   val id: String
 
@@ -30,8 +30,8 @@ trait Step[T <: ExecutableStep] {
 
 }
 
-trait ExecutableStep {
-
-  def buildTask(context: ActorContext, stage: Stage): Task
-
-}
+//trait ExecutableStep {
+//
+//  def buildTask(context: ActorContext): Task
+//
+//}

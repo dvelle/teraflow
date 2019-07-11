@@ -26,7 +26,7 @@ object FileHelper {
 
   def getLocalScriptPath(): String = {
     val userDir   = System.getProperty("user.home")
-    val localPath = userDir + slash + ".launcher"
+    val localPath = userDir + slash + ".teraflow"
     Files.createDirectories(Paths.get(localPath))
     localPath + slash + new Date().getTime.toString + ".sh"
   }
@@ -36,7 +36,7 @@ object FileHelper {
       case Some(p) => p
       case None =>
         val userDir = System.getProperty("user.home")
-        userDir + slash + ".launcher"
+        userDir + slash + ".teraflow"
     }
 
     Files.createDirectories(Paths.get(localPath))

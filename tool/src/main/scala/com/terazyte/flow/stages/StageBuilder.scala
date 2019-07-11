@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.terazyte.flow.job.stages
+package com.terazyte.flow.stages
 
 import akka.actor.ActorContext
 import com.terazyte.flow.job.Task

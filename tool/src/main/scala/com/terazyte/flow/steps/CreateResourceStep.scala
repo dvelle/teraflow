@@ -15,6 +15,7 @@
  */
 
 package com.terazyte.flow.steps
+
 import akka.actor.{ActorContext, Props}
 import com.terazyte.flow.emr.{EMRResource, EMRSupport, EMRTargetYamlParser}
 import com.terazyte.flow.job.{Stage, Task, TaskDef}
@@ -22,12 +23,11 @@ import com.terazyte.flow.task.ExecCreateResource
 import net.jcazevedo.moultingyaml.{DefaultYamlProtocol, YamlString, YamlValue}
 
 case class CreateResourceStep(resource: String, resourceDef: ResourceDef)
-    extends TaskDef(name = s"Create ${resource}")
-    with ExecutableStep {
+    extends TaskDef(taskName = s"Create ${resource}") {
 
-  override def buildTask(context: ActorContext, stage: Stage): Task = {
+  override def buildTask(context: ActorContext): Task = {
     val actor = context.actorOf(CreateResourceStep.props(this))
-    Task(stage, this, actor)
+    Task( this, actor)
 
   }
 

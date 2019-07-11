@@ -1,4 +1,5 @@
-package com.terazyte.flow.job.stages
+package com.terazyte.flow.stages
+
 //import akka.actor.ActorContext
 //import com.terazyte.launcher.job.{Build, Task}
 //import com.terazyte.launcher.parser.LaunchJobConfig

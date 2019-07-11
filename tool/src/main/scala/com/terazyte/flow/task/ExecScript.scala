@@ -15,6 +15,7 @@
  */
 
 package com.terazyte.flow.task
+
 import com.terazyte.flow.config.remote.RemoteHost
 import com.terazyte.flow.emr.EMRTarget
 import com.terazyte.flow.job.{Session, TaskExecResult, TaskExecutor}
@@ -33,9 +34,9 @@ case class ExecScript(taskDef: ScriptStep) extends TaskExecutor[ScriptStep] {
         val opsResult = resource map {
           case r: LocalResource => r.exec(x)
           case r: RemoteHost =>
-            r.exec(x).map(s => TaskExecResult.success(taskDef, IdGenerator.id(taskDef.scriptType), s))
+            r.exec(x).map(s => TaskExecResult.success(taskDef, s))
           case r: EMRTarget =>
-            r.exec(x).map(s => TaskExecResult.success(taskDef, IdGenerator.id(taskDef.scriptType), s))
+            r.exec(x).map(s => TaskExecResult.success(taskDef, s))
           case _ => Left(new IllegalArgumentException("Eligible targets are local, remote server and EMR cluster"))
         }
 

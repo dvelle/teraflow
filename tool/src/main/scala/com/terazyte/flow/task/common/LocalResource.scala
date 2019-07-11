@@ -15,6 +15,7 @@
  */
 
 package com.terazyte.flow.task.common
+
 import java.io.IOException
 import java.util.concurrent.ConcurrentLinkedQueue
 
@@ -65,7 +66,7 @@ class LocalResource extends ResourceConfig {
       Left(new IOException(logs.mkString("\n") + s"\n Exit Code: ${exitCode}"))
     } else {
       val taskDef = ScriptStep("bash", script)
-      Right(TaskExecResult.success(taskDef, IdGenerator.id("bash"), detail = "Script execution completed."))
+      Right(TaskExecResult.success(taskDef, detail = "Script execution completed."))
     }
   }
 

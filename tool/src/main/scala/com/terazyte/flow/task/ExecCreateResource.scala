@@ -15,6 +15,7 @@
  */
 
 package com.terazyte.flow.task
+
 import java.util.UUID
 
 import com.terazyte.flow.emr.{EMRClusterConfig, EMRClusterConfigParser, EMRResource, EMRTarget}

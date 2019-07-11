@@ -15,17 +15,18 @@
  */
 
 package com.terazyte.flow.steps
+
 import akka.actor.{ActorContext, Props}
 import com.terazyte.flow.bash.BashScriptParser
 import com.terazyte.flow.job.{Stage, Task, TaskDef}
 import com.terazyte.flow.task.ExecScript
 import net.jcazevedo.moultingyaml.{YamlString, YamlValue}
 
-case class ScriptStep(scriptType: String, execDef: ExecDef) extends TaskDef(name = s"Execute ${scriptType} script", tailLogs = true) {
+case class ScriptStep(scriptType: String, execDef: ExecDef) extends TaskDef(taskName = s"Execute ${scriptType} script", tailLogs = true) {
 
-  override def buildTask(context: ActorContext, stage: Stage): Task = {
+  override def buildTask(context: ActorContext): Task = {
     val actor = context.actorOf(ScriptStep.props(this))
-    Task(stage, this, actor)
+    Task(this, actor)
   }
 }
 

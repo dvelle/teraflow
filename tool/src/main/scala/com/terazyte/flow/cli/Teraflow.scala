@@ -33,7 +33,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.io.Source
 import scala.util.{Failure, Success, Try}
 
-object Launcher extends App {
+object Teraflow extends App {
 
   System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.NoOpLog")
 
@@ -45,21 +45,21 @@ object Launcher extends App {
       if (config.version) {
         showVersion()
       }
-      val system   = ActorSystem("Launcher")
-      val launcher = new Launcher(system, config)
+      val system   = ActorSystem("Teraflow")
+      val flowExecutor = new Teraflow(system, config)
       val configPath = if (args.length == 1) {
         val fileName = args(0) + config.configPath.substring(config.configPath.lastIndexOf('/') + 1)
         val prevPart = config.configPath.substring(0, config.configPath.lastIndexOf('/') + 1)
         prevPart + fileName
       } else config.configPath
 
-      launcher.launch(configPath.replaceFirst("~", System.getProperty("user.home")))
+      flowExecutor.launch(configPath.replaceFirst("~", System.getProperty("user.home")))
     case None =>
       println("Failed parsing the params")
   }
 
   def showVersion(): Unit = {
-    val progName = "Launcher"
+    val progName = "Teraflow"
     val progVersion = System.getProperty("prog.version") match {
       case x if x != null && x.nonEmpty => x
       case _                            => "1.0.0"
@@ -75,7 +75,7 @@ object Launcher extends App {
 
 }
 
-class Launcher(system: ActorSystem, cliConfig: CLIConfig) extends SecretConfigProtocol {
+class Teraflow(system: ActorSystem, cliConfig: CLIConfig) extends SecretConfigProtocol {
 
   def launch(path: String): Unit = {
     val configFile = new File(path)
@@ -114,8 +114,8 @@ class Launcher(system: ActorSystem, cliConfig: CLIConfig) extends SecretConfigPr
 
         optResources match {
           case Some(resources) =>
-            val controller = system.actorOf(JobController.props(config, resources), "launcher-controller")
-            controller ! StartJob
+            val controller = system.actorOf(JobController.props(config, resources), "teraflow-controller")
+            controller ! StartJob()
           case None =>
             system.terminate().onComplete(_ => sys.exit(1))
 

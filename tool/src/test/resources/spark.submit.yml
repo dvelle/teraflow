@@ -1,0 +1,27 @@
+project: Demo
+resources: ./resources.yml
+tasks:
+
+      - cp:
+          from: /Users/shad/work/spark-hello-world/target/scala-2.11/spark-hello-world-assembly-0.1.jar
+          to: /apps/spark/hello.jar
+          target: spark-docker
+
+      - cp:
+          from: /Users/shad/work/teraflow/tool/src/test/resources/spark/data.in
+          to: /apps/spark/
+          target: spark-docker
+
+
+      - cmd:
+          value: rm -rf /user/spark/out
+          target: spark-docker
+
+      - sparkSubmit:
+          appName: run-spark
+          className: com.gigahex.spark.hello.WordCount
+          appPath: /apps/spark/hello.jar
+          appParams: /apps/spark/data.in /apps/spark/out
+          conf:
+              spark.rpc.numRetries: "4"
+          target: spark-docker

@@ -16,9 +16,6 @@
 
 package com.terazyte.flow.task
 
-import java.io.File
-
-import akka.actor.{ActorContext, Props}
 import com.terazyte.flow.steps.CopyStep
 import com.terazyte.flow.task.common._
 import com.terazyte.flow.config.DataTransferable
@@ -35,10 +32,10 @@ case class ExecRemoteCopy(taskDef: CopyStep) extends TaskExecutor[CopyStep] {
       .find(_.alias.equals(taskDef.target.get))
       .map {
         case x: DataTransferable =>
-          Try(x.execCopy(taskDef.from, taskDef.to)).toEither.map(_ => TaskExecResult.success(taskDef, id()))
-        case _ => Left(new RuntimeException("Unsupported secrets configuration"))
+          Try(x.execCopy(taskDef.from, taskDef.to)).toEither.map(_ => TaskExecResult.success(taskDef))
+        case _ => Left(new RuntimeException("Unsupported resources configuration"))
       }
-      .getOrElse(Left(new RuntimeException(s"No secrets configured by the alias: ${taskDef.target}")))
+      .getOrElse(Left(new RuntimeException(s"No resources configured by the alias: ${taskDef.target}")))
 
   }
 

@@ -1,0 +1,33 @@
+version: '3'
+services:
+  Spark:
+    networks:
+      network_testing:
+        ipv4_address: 172.16.100.19
+    image: gigahex/giga-spark:2.3.1
+    ports:
+      - 5001:8080
+      - 5002:8081
+      - 5003:18080
+    extra_hosts:
+      - spark:172.16.100.19
+    depends_on: []
+    volumes:
+      - data-volume:/apps
+      - data-volume:/hadoop
+      - data-volume:/home
+    stdin_open: true
+    container_name: spark-test
+    environment:
+      - SPARK_HOME=/apps/spark
+      - TZ=Asia/Kolkata
+    tty: true
+networks:
+  network_testing:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.100.0/24
+volumes:
+  data-volume:
